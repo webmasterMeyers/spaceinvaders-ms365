@@ -2,17 +2,15 @@
 
 The classic Space Invaders game written in JavaScript as a learning exercise.
 
-This fork is the Microsoft Edition.  Get your love on for Microsoft!
+**This fork** is the _Microsoft_ Edition.  Get your love on for **Microsoft**!
 
 No jQuery or any other third party libraries, just raw JavaScript, CSS and HTML.
 
-See it Live: [https://dwmkerr.github.io/spaceinvaders/](https://dwmkerr.github.io/spaceinvaders/)
+See it Live: [https://webmastermeyers.github.io/spaceinvaders-ms365/](https://webmastermeyers.github.io/spaceinvaders-ms365/)
 
-[![Space Invaders Screenshot](./screenshot.jpg "Space Invaders Screenshot")](https://dwmkerr.github.io/spaceinvaders/)
+[![Space Invaders Screenshot](./screenshot.jpg "Space Invaders Screenshot")](https://webmastermeyers.github.io/spaceinvaders-ms365/)
 
 ## Intro
-
-[![Run on Repl.it](https://repl.it/badge/github/dwmkerr/spaceinvaders)](https://repl.it/github/dwmkerr/spaceinvaders)
 
 What's there to say? It's Space Invaders in JavaScript!
 
