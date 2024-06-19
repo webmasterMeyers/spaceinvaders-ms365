@@ -765,7 +765,6 @@ function Invader(x, y, rank, file, type, icon) {
     this.type = type;
     this.width = 18;
     this.height = 14;
-    console.log(icon);
 }
 
 /*
