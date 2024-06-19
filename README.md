@@ -2,6 +2,8 @@
 
 The classic Space Invaders game written in JavaScript as a learning exercise.
 
+This fork is the Microsoft Edition.  Get your love on for Microsoft!
+
 No jQuery or any other third party libraries, just raw JavaScript, CSS and HTML.
 
 See it Live: [https://dwmkerr.github.io/spaceinvaders/](https://dwmkerr.github.io/spaceinvaders/)
