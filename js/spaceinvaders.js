@@ -362,7 +362,7 @@ PlayState.prototype.enter = function(game) {
     for(var rank = 0; rank < ranks; rank++){
         for(var file = 0; file < files; file++) {
             var image = new Image();
-            image.src = 'assets/' + ['excel.png', 'power.png', 'word.png', 'windows.png', 'xml.png', 'bill.png'][Math.floor(Math.random() * 6)];
+            image.src = 'assets/' + ['excel.png', 'power.png', 'word.png', 'windows.png', 'xml.png'][Math.floor(Math.random() * 5)];
             invaders.push(new Invader(
             (game.width / 2) + ((files/2 - file) * 200 / files),
             (game.gameBounds.top + rank * 20),
