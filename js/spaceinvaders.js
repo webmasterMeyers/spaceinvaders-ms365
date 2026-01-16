@@ -70,6 +70,9 @@ function Game() {
     //  All sounds.
     this.sounds = null;
 
+    //  Available invader images (discovered from assets folder).
+    this.invaderImages = [];
+
     //  The previous x position, used for touch.
     this.previousX = 0;
 }
@@ -91,6 +94,139 @@ Game.prototype.initialise = function (gameCanvas) {
         top: gameCanvas.height / 2 - this.config.gameHeight / 2,
         bottom: gameCanvas.height / 2 + this.config.gameHeight / 2,
     };
+
+    //  Discover and load assets from the assets folder.
+    this.discoverAssets();
+};
+
+//  Discover all image assets from the assets folder.
+//  Since browsers can't directly scan folders, this function attempts to:
+//  1. Fetch a directory listing (if server supports it)
+//  2. Fall back to trying common image filenames
+Game.prototype.discoverAssets = function () {
+    var self = this;
+    var discoveredImages = [];
+
+    //  First, try to fetch a directory listing (works on some servers).
+    fetch('assets/')
+        .then(function (response) {
+            if (response.ok) {
+                return response.text();
+            }
+            throw new Error('Directory listing not available');
+        })
+        .then(function (html) {
+            //  Parse HTML to find image files.
+            var parser = new DOMParser();
+            var doc = parser.parseFromString(html, 'text/html');
+            var links = doc.querySelectorAll('a[href]');
+            var imageFiles = [];
+
+            links.forEach(function (link) {
+                var href = link.getAttribute('href');
+                //  Filter out parent directory and non-image files.
+                if (href && href !== '../' && /\.(png|jpg|jpeg|gif|webp)$/i.test(href)) {
+                    //  Normalize the path: extract just the filename.
+                    var normalized = href;
+
+                    //  Remove query parameters if present.
+                    var queryIndex = normalized.indexOf('?');
+                    if (queryIndex !== -1) {
+                        normalized = normalized.substring(0, queryIndex);
+                    }
+
+                    //  Remove hash if present.
+                    var hashIndex = normalized.indexOf('#');
+                    if (hashIndex !== -1) {
+                        normalized = normalized.substring(0, hashIndex);
+                    }
+
+                    //  Extract filename from path (handle both relative and absolute paths).
+                    var lastSlash = normalized.lastIndexOf('/');
+                    if (lastSlash !== -1) {
+                        normalized = normalized.substring(lastSlash + 1);
+                    }
+
+                    //  Remove leading "./" or "assets/" if somehow still present.
+                    normalized = normalized.replace(/^(\.\/|assets\/)/, '');
+
+                    //  Decode URL-encoded characters (like %20 for spaces, %E2%80%AF for special spaces).
+                    try {
+                        normalized = decodeURIComponent(normalized);
+                    } catch (e) {
+                        //  If decoding fails, use the original.
+                    }
+
+                    //  Only add if we have a valid filename.
+                    if (normalized && normalized.length > 0) {
+                        imageFiles.push(normalized);
+                    }
+                }
+            });
+
+            //  Load discovered images.
+            if (imageFiles.length > 0) {
+                self.loadAssetImages(imageFiles);
+            } else {
+                //  No images found in directory listing, try fallback.
+                self.fallbackAssetDiscovery();
+            }
+        })
+        .catch(function () {
+            //  Directory listing not available, try fallback method.
+            self.fallbackAssetDiscovery();
+        });
+};
+
+//  Load images from a list of filenames.
+Game.prototype.loadAssetImages = function (imageFiles) {
+    var self = this;
+    var loadedImages = [];
+    var loaded = 0;
+    var total = imageFiles.length;
+
+    if (total === 0) {
+        this.fallbackAssetDiscovery();
+        return;
+    }
+
+    imageFiles.forEach(function (filename) {
+        //  Ensure filename doesn't already start with "assets/"
+        var normalizedFilename = filename.replace(/^assets\//, '');
+        var img = new Image();
+        img.onload = function () {
+            loadedImages.push(img);
+            loaded++;
+            if (loaded === total) {
+                self.invaderImages = loadedImages;
+            }
+        };
+        img.onerror = function () {
+            loaded++;
+            if (loaded === total) {
+                self.invaderImages = loadedImages.length > 0 ? loadedImages : self.invaderImages;
+                //  If no images loaded, try fallback.
+                if (loadedImages.length === 0) {
+                    self.fallbackAssetDiscovery();
+                }
+            }
+        };
+        img.src = 'assets/' + normalizedFilename;
+    });
+};
+
+//  Fallback: create simple colored rectangles like the original Space Invaders.
+Game.prototype.fallbackAssetDiscovery = function () {
+    //  Create simple colored rectangles for invaders (like the original game).
+    //  Different colors for visual variety.
+    var rectangleColors = [
+        { type: 'rectangle', color: '#00ff00' }, // Green
+        { type: 'rectangle', color: '#ffff00' }, // Yellow
+        { type: 'rectangle', color: '#00ffff' }, // Cyan
+        { type: 'rectangle', color: '#ff00ff' }, // Magenta
+        { type: 'rectangle', color: '#ff8800' }  // Orange
+    ];
+    this.invaderImages = rectangleColors;
 };
 
 Game.prototype.moveToState = function (state) {
@@ -359,14 +495,34 @@ PlayState.prototype.enter = function (game) {
     var ranks = this.config.invaderRanks + 0.1 * limitLevel;
     var files = this.config.invaderFiles + 0.2 * limitLevel;
     var invaders = [];
+
+    //  Get available invader images (use discovered assets from assets folder).
+    var availableImages = game.invaderImages && game.invaderImages.length > 0
+        ? game.invaderImages
+        : [];
+
+    //  If no images were discovered yet, trigger fallback to create rectangles.
+    if (availableImages.length === 0) {
+        game.fallbackAssetDiscovery();
+        availableImages = game.invaderImages && game.invaderImages.length > 0
+            ? game.invaderImages
+            : [];
+    }
+
     for (var rank = 0; rank < ranks; rank++) {
         for (var file = 0; file < files; file++) {
-            var image = new Image();
-            image.src = 'assets/' + ['excel.png', 'power.png', 'word.png', 'windows.png', 'xml.png'][Math.floor(Math.random() * 5)];
+            var icon;
+            if (availableImages.length > 0) {
+                //  Use a random image/rectangle from the discovered assets.
+                icon = availableImages[Math.floor(Math.random() * availableImages.length)];
+            } else {
+                //  Last resort: create a default green rectangle.
+                icon = { type: 'rectangle', color: '#00ff00' };
+            }
             invaders.push(new Invader(
                 (game.width / 2) + ((files / 2 - file) * 200 / files),
                 (game.gameBounds.top + rank * 20),
-                rank, file, 'Invader', image));
+                rank, file, 'Invader', icon));
         }
     }
     this.invaders = invaders;
@@ -570,7 +726,19 @@ PlayState.prototype.draw = function (game, dt, ctx) {
     //  Draw invaders.
     for (var i = 0; i < this.invaders.length; i++) {
         var invader = this.invaders[i];
-        ctx.drawImage(invader.icon, invader.x - invader.width / 2, invader.y - invader.height / 2, invader.width, invader.height);
+        //  Check if icon is an image or a rectangle marker.
+        if (invader.icon && invader.icon.type === 'rectangle') {
+            //  Draw a simple colored rectangle (fallback mode).
+            ctx.fillStyle = invader.icon.color;
+            ctx.fillRect(invader.x - invader.width / 2, invader.y - invader.height / 2, invader.width, invader.height);
+        } else if (invader.icon && invader.icon instanceof Image) {
+            //  Draw the image.
+            ctx.drawImage(invader.icon, invader.x - invader.width / 2, invader.y - invader.height / 2, invader.width, invader.height);
+        } else {
+            //  Last resort: draw a default rectangle.
+            ctx.fillStyle = '#00ff00';
+            ctx.fillRect(invader.x - invader.width / 2, invader.y - invader.height / 2, invader.width, invader.height);
+        }
     }
 
     //  Draw bombs.
