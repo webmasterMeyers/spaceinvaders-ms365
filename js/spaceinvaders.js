@@ -812,9 +812,9 @@ Sounds.prototype.init = function () {
     this.mute = false;
 
     //  Create a gain node for volume control (0.0 to 1.0).
-    //  Set to 0.3 (30% volume) to reduce the loud sounds.
+    //  Set to 0.1 (10% volume) to significantly reduce the loud sounds.
     this.gainNode = this.audioContext.createGain();
-    this.gainNode.gain.value = 0.3;
+    this.gainNode.gain.value = 0.1;
     this.gainNode.connect(this.audioContext.destination);
 };
 
@@ -844,11 +844,32 @@ Sounds.prototype.loadSound = function (name, url) {
     }
 };
 
+Sounds.prototype.setVolume = function (volume) {
+    //  Set the volume (0.0 to 1.0).
+    if (!this.gainNode) {
+        this.gainNode = this.audioContext.createGain();
+        this.gainNode.connect(this.audioContext.destination);
+    }
+    this.gainNode.gain.value = volume;
+};
+
 Sounds.prototype.playSound = function (name) {
 
     //  If we've not got the sound, don't bother playing it.
     if (this.sounds[name] === undefined || this.sounds[name] === null || this.mute === true) {
         return;
+    }
+
+    //  Ensure gain node is initialized (safety check).
+    if (!this.gainNode) {
+        this.gainNode = this.audioContext.createGain();
+        this.gainNode.gain.value = 0.1;
+        this.gainNode.connect(this.audioContext.destination);
+    }
+
+    //  Resume audio context if suspended (required by some browsers).
+    if (this.audioContext.state === 'suspended') {
+        this.audioContext.resume();
     }
 
     //  Create a sound source, set the buffer, connect through the gain node
