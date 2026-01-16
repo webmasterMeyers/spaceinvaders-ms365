@@ -814,7 +814,7 @@ Sounds.prototype.init = function () {
     //  Create a gain node for volume control (0.0 to 1.0).
     //  Set to 0.3 (30% volume) to reduce the loud sounds.
     this.gainNode = this.audioContext.createGain();
-    this.gainNode.gain.value = 0.6;
+    this.gainNode.gain.value = 0.3;
     this.gainNode.connect(this.audioContext.destination);
 };
 
